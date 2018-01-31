@@ -6,14 +6,33 @@ import router from './router'
 
 Vue.config.productionTip = false
 
+// 全局注册：组件注册在初始化根实例之前
+// 也可以单独写一个vue文件,template写在<template></template>中，其他属性写在<script></script>中
+Vue.component('my-component', {
+  template: '<div>custom global component! {{counter}}<button @click="print">click</button></div>',
+  data () {
+    return {
+      msg: '自定义全局组件',
+      counter: 0
+    }
+  },
+  methods: {
+    print () {
+      this.counter += 1
+    }
+  }
+})
+
 /* eslint-disable no-new */
 // vue 根实例
 // data是一个存粹的对象，浏览器 API 创建的原生对象，原型上的属性会被忽略
 const data = {name: 'wurong', jiguan: 'sichuan', $test: 'hehe'}
+
+// 也可以创建两个Vue实例，替换页面上的两个节点
 const vm = new Vue({
   el: '#app', // 替换index.html中id为app的节点
   router,
-  template: '<App :app-props="name" />',
+  template: '<div><App :app-props="name" /><button @click="changName">change name</button></div>',
   components: { App },
   data: function () { // 使用data: data也可以，但是在component内声明data必须使用函数的形式
     return data
@@ -39,11 +58,13 @@ const vm = new Vue({
   },
   updated: function () {
     console.log('根组件跟新后.....')
-    this.name = 'hehe'
   },
   methods: {
     plus: function () { // 内部使用this.plus()调用，外部使用vm.plus()调用
       this.name = 'wr'
+    },
+    changName () {
+      this.name = this.name + '?'
     }
   }
 })
@@ -62,6 +83,8 @@ console.log('vm.$el:', vm.$el) // 实例挂载到dom之后才可以访问
 
 setTimeout(() => {
   data.name = 'wurong++'
+  data.xx = 'xxx'
+  console.log('创建实例后添加xx属性vm.xx', vm.xx, 'data & vm.$data', data)
   console.log('after 1 second name is:', vm.name)
 }, 2000)
 
