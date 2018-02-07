@@ -177,16 +177,445 @@
     <p>19.单向数据流</p>
     <div>1.使用props初始化data属性</div>
     <div>{{initProps}}</div>
-    <div>2.使用props初始化计算属性</div>
+    <div>2.使用props作为原始数据传入跟新计算属性</div>
     <div>{{appCompute}}</div>
+    <p>20.使用v-on绑定自定义事件</p>
+    <div style="border: 1px solid blue">
+      <span>父组件通过v-on监听子组件的事件<i style="color: red">{{counter}}</i>,自定义组件可以绑定原生dom事件(@click.native)</span>
+      <button-counter v-on:increment="incrementTotal"></button-counter>
+      <button-counter v-on:increment="incrementTotal"></button-counter>
+      <button-counter v-on:click.native="dosomething" v-on:increment="incrementTotal"></button-counter>
+    </div>
+    <p>21.自定义表单控件添加自定义事件</p>
+    {{inputValue}}
+    <customer-input v-model="inputValue"></customer-input>
+    <p>22.使用卡槽slot分发内容</p>
+    <div>1)单个卡槽</div>
+    <single-slot></single-slot>
+    <single-slot><h2>这是一些原始内容{{inputValue}}</h2></single-slot>
+    <div>2)多个卡槽（具名卡槽）</div>
+    <multiple-slot>
+      <h1 slot="header">Here must be a page title</h1>
+      <p>A paragraph for main content</p>
+      <p>An other one</p>
+      <p slot="footer">Here's some contact info</p>
+      <p>after footer</p>
+    </multiple-slot>
+    <div>3)作用域卡槽(模板可以接收子组件传过来的porps对象,可以使用es6结构)</div>
+    <scope-slot>
+      <template slot-scope="props">
+        <li>{{props.text}}</li>
+      </template>
+    </scope-slot>
+    <scope-slot>
+      <template slot-scope="{text}">
+        <li>{{text}}</li>
+      </template>
+    </scope-slot>
+    <p>23.动态组件</p>
+    <component v-bind:is="currentView"></component>
+    <button @click="changView">changeView</button>
+    <p>24.异步组件</P>
+    <async-component></async-component>
+    <button-counter/>
+    <p>25.递归组件</p>
+    <recursive-component num="10"/>
+    <p>26.递归方式渲染菜单</p>
+    <menu-component v-bind="item" v-for="(item, index) in links" :key="index"/>
+    <p>27.内联模板</p>
+    <div>内联模板替换了组件原有的模板,可以直接使用组件属性和方法而不是作为父组件的模板编译,使得模板编写更灵活</div>
+    <customer-input inline-template>
+      <div>{{num}}</div>
+    </customer-input>
+    <p>28.X-template(貌似支持html中写法？？？？)</p>
+    <x-template/>
+    <p>29.css过渡</p>
+    <div>经过transition包裹的dom元素显示切换的时候他的class名称也会切换</div>
+    <button @click="showDiv=!showDiv">toogle</button>
+    <transition name="fade">
+      <p v-if="showDiv">hello</p>
+    </transition>
     <router-view/>
   </div>
 </template>
-
+<script type="text/x-template" id="hello-world-template">
+  <p>Hello hello hello</p>
+</script>
 <script>
 import Vue from 'vue' // 使用require的方式Vue.set会报错
 import _ from 'lodash'
 var axios = require('axios')  // 用于发请求
+
+// button-counter组件
+const BtnCounter = {
+  created: function () {
+    console.log(333333333333333333)
+  },
+  template: '<div><div>点击我</div><button @click="incrementCounter">{{counter}}</button></div>',
+  data: function () {
+    return {
+      counter: 0
+    }
+  },
+  methods: {
+    incrementCounter () {
+      this.counter += 1
+      this.$emit('increment')
+    }
+  }
+}
+
+// customer-imput 组件
+
+const CustomerInput = {
+  template: '<input ref="input" :value="value" @input="updateValue($event.target.value)" />',
+  props: ['value'],
+  methods: {
+    updateValue (value) {
+      this.$refs.input.value = value
+      this.$emit('input', value)
+    }
+  },
+  data: function () {
+    return {
+      num: 234234
+    }
+  }
+}
+
+// single-slot组件
+
+const SingleSlot = {
+  template: '<div style="border: 1px solid green; margin: 30px"><h2>我是子组件的标题</h2><slot>我是备用内容，只有在没有要分发的内容的时候才显示</slot></div>'
+}
+
+// multiple-slot组件
+const MultilpleSlot = {
+  template: '\n' +
+    '<div>\n' +
+      '<slot name="header"></slot>\n' +
+      '<main><slot></slot></main>\n' +
+      '<slot name="footer"></slot>\n' +
+    '</div>'
+}
+
+// scope-slot
+
+const ScopeSlot = {
+  template: '<ul><slot v-for="item in items" :text="item"></slot></ul>',
+  data: function () {
+    return {
+      items: ['do', 'ri', 'mi']
+    }
+  }
+}
+
+// recursive-component 递归组件
+const RecursiveComponent = {
+  props: ['num'],
+  name: 'recursive-component', // 需要给组件命名才能在组件内部递归调用
+  template: '<div>123<recursive-component v-if="num>0" :num="num-1" /></div>'
+}
+
+// 递归渲染菜单
+const links = [
+  {
+    'id': 1,
+    'label': '任务管理',
+    'link': '',
+    'children': [
+      {
+        'id': 2,
+        'label': '我的任务',
+        'link': '/borrower/myTasks',
+        'children': []
+      }, {
+        'id': 3,
+        'label': '团队任务',
+        'link': '/borrower/teamTasks',
+        'children': []
+      }, {
+        'id': 4,
+        'label': '未分配任务',
+        'link': '/borrower/no-sales-tasks',
+        'children': []
+      }, {
+        'id': 5,
+        'label': '银联pos查询',
+        'link': '/borrower/unionPay',
+        'children': []
+      }, {
+        'id': 6,
+        'label': '借款信息查询',
+        'link': '/borrower/borrowerLoanInfo',
+        'children': []
+      }, {
+        'id': 7,
+        'label': '复议审核',
+        'link': '/borrower/reAudit',
+        'children': []
+      }, {
+        'id': 8,
+        'label': '站内信',
+        'link': '/borrower/notification',
+        'children': []
+      }, {
+        'id': 9,
+        'label': '站内信配置',
+        'link': '/borrower/notifiySetting',
+        'children': []
+      }
+    ]
+  }, {
+    'id': 10,
+    'label': '通话管理',
+    'link': '',
+    'children': [
+      {
+        'id': 11,
+        'label': '我的通话记录',
+        'link': '/borrower/callrecords',
+        'children': []
+      }, {
+        'id': 12,
+        'label': '录音记录',
+        'link': '/borrower/records',
+        'children': []
+      }, {
+        'id': 13,
+        'label': '录音记录',
+        'link': '/borrower/records_new',
+        'children': []
+      }, {
+        'id': 14,
+        'label': '我的录音库',
+        'link': '/borrower/privaterecords',
+        'children': []
+      }, {
+        'id': 15,
+        'label': '公共录音库',
+        'link': '/borrower/publicrecords',
+        'children': []
+      }, {
+        'id': 16,
+        'label': '我的分享记录',
+        'link': '/borrower/sharedrecords',
+        'children': []
+      }
+    ]
+  }, {
+    'id': 17,
+    'label': '报表管理',
+    'link': '',
+    'children': [
+      {
+        'id': 18,
+        'label': '通话记录报表',
+        'link': '/borrower/call-record-report',
+        'children': []
+      }, {
+        'id': 19,
+        'label': '任务统计报表',
+        'link': '/borrower/taskStatistics',
+        'children': []
+      }, {
+        'id': 20,
+        'label': '贷款申请表',
+        'link': '/borrower/loan_application_report',
+        'children': []
+      }, {
+        'id': 21,
+        'label': '还款提醒表',
+        'link': '/borrower/loan_repayment_report',
+        'children': []
+      }, {
+        'id': 22,
+        'label': '电话统计报表',
+        'link': '/borrower/tellphone-statistics-report',
+        'children': []
+      }
+    ]
+  }, {
+    'id': 23,
+    'label': '消息管理',
+    'link': '',
+    'children': [
+      {
+        'id': 24,
+        'label': '我的记录',
+        'link': '/borrower/sms-my-record',
+        'children': []
+      }, {
+        'id': 25,
+        'label': '所有记录',
+        'link': '/borrower/sms-all-record',
+        'children': []
+      }, {
+        'id': 26,
+        'label': '群发消息',
+        'link': '/borrower/sms-send',
+        'children': []
+      }, {
+        'id': 27,
+        'label': '消息模板',
+        'link': '/borrower/sms-template',
+        'children': []
+      }
+    ]
+  }, {
+    'id': 29,
+    'label': '客户管理',
+    'link': '',
+    'children': [
+      {
+        'id': 30,
+        'label': '我的用户',
+        'link': '/borrower/myCustomers',
+        'children': []
+      }, {
+        'id': 31,
+        'label': '所有用户',
+        'link': '/borrower/allCustomers',
+        'children': []
+      }, {
+        'id': 32,
+        'label': '未分配用户',
+        'link': '/borrower/undistributed-customer',
+        'children': []
+      }, {
+        'id': 33,
+        'label': '新增用户',
+        'link': '/borrower/toAddborrowcustomer',
+        'children': []
+      }, {
+        'id': 34,
+        'label': '失败历史',
+        'link': '/borrower/toUploadFialedList',
+        'children': []
+      }
+    ]
+  }, {
+    'id': 35,
+    'label': '创建借款',
+    'link': '',
+    'children': [
+      {
+        'id': 36,
+        'label': '创建借款',
+        'link': '/borrower/createLoan',
+        'children': []
+      }
+    ]
+  }, {
+    'id': 37,
+    'label': '工单',
+    'link': '',
+    'children': [
+      {
+        'id': 38,
+        'label': '所有工单',
+        'link': '/borrower/allTicket',
+        'children': []
+      }, {
+        'id': 39,
+        'label': '我的工单',
+        'link': '/borrower/myTicket',
+        'children': []
+      }
+    ]
+  }, {
+    'id': 40,
+    'label': '信息管理',
+    'link': '',
+    'children': [
+      {
+        'id': 41,
+        'label': '公告管理',
+        'link': '/borrower/notice',
+        'children': []
+      }, {
+        'id': 42,
+        'label': '知识库管理',
+        'link': '/borrower/knowledge',
+        'children': []
+      }, {
+        'id': 43,
+        'label': '我的收藏',
+        'link': '/borrower/collection',
+        'children': []
+      }, {
+        'id': 44,
+        'label': '新增信息',
+        'link': '/borrower/article-add',
+        'children': []
+      }, {
+        'id': 45,
+        'label': '分类管理',
+        'link': '/borrower/sortManage',
+        'children': []
+      }, {
+        'id': 46,
+        'label': '组和Tag管理',
+        'link': '/borrower/cms-group',
+        'children': []
+      }
+    ]
+  }, {
+    'id': 47,
+    'label': '配置',
+    'link': '',
+    'children': [
+      {
+        'id': 48,
+        'label': '任务配置',
+        'link': '/borrower/task-delay',
+        'children': []
+      }, {
+        'id': 49,
+        'label': '过滤',
+        'link': '',
+        'children': [
+          {
+            'id': 50,
+            'label': '销售过滤',
+            'link': '/borrower/assignActorRuleConfig',
+            'children': [
+              {
+                'id': 50,
+                'label': '销售过滤',
+                'link': '/borrower/assignActorRuleConfig',
+                'children': []
+              }
+            ]
+          }, {
+            'id': 51,
+            'label': '任务状态',
+            'link': '/borrower/assignActorTaskStatusConfig',
+            'children': []
+          }
+        ]
+      }
+    ]
+  }
+]
+
+const MenuComponent = {
+  name: 'menu-component',
+  props: ['label', 'children', 'link'],
+  template: '\n' +
+    '<div>\n' +
+      '<div>\n' +
+        '<a v-if="link" :href="link">{{label}}</a>\n' +
+        '<span v-else>{{label}}</span>\n' +
+      '</div>\n' +
+      '<div v-if="children.length>1"><menu-component v-for="(item, index) of children" v-bind="item"/></div>\n' +
+    '</div>'
+}
+
+// X-template
+const XTemplate = {
+  template: '#hello-world-template'
+}
 
 export default {
   name: 'app',  // 与模板中的id为app的div没有对应关系
@@ -230,7 +659,12 @@ export default {
       testArray: { a: [2, 4, 9] },
       age: null,
       trimAge: '',
-      initProps: this.appProps // 这里只是初始化initProps，当appProps改变的时候不受影响
+      initProps: this.appProps, // 这里只是初始化initProps，当appProps改变的时候不受影响
+      counter: 0,
+      inputValue: '',
+      currentView: 'red-block',
+      links,
+      showDiv: true
     }
   },
   computed: {
@@ -351,7 +785,34 @@ export default {
     },
     printTrimAge: function () {
       console.log('this.trimAge:', this.trimAge)
+    },
+    incrementTotal () {
+      this.counter += 1
+    },
+    changView () {
+      if (this.currentView === 'red-block') {
+        this.currentView = 'green-block'
+      } else {
+        this.currentView = 'red-block'
+      }
     }
+  },
+  components: {
+    'button-counter': BtnCounter,
+    'customer-input': CustomerInput,
+    'single-slot': SingleSlot,
+    'multiple-slot': MultilpleSlot,
+    'scope-slot': ScopeSlot,
+    'red-block': {
+      template: '<div style="width: 200px;height: 200px;background: red; margin: 0 auto;"></div>'
+    },
+    'green-block': {
+      template: '<div style="width: 200px;height: 200px;background: green; margin: 0 auto;"></div>'
+    },
+    'async-component': () => import('@/components/AsyncComponent'), // webpack2 + es2015只有在页面渲染组件的时候才去加载对应的js文件，network将他打包为了1.js
+    'recursive-component': RecursiveComponent,
+    'menu-component': MenuComponent,
+    'x-template': XTemplate
   }
 }
 </script>
@@ -383,4 +844,16 @@ p {
 .style-b {
   font-weight: bold
 }
+/* 这几个样式(过渡的类名)是vue提供的，样式的前缀是在transition中name定义的 */
+.fade-enter-active {
+  transition: all .3s ease;
+}
+.fade-leave-active {
+  transition: all .8s cubic-bezier(1.0, 0.5, 0.8, 1.0);
+}
+.fade-enter,.fade-leave-to {
+  transform: translateX(10px);
+  opacity: 0;
+}
+/************************/
 </style>
