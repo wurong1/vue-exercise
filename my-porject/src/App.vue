@@ -221,20 +221,28 @@
     <p>25.递归组件</p>
     <recursive-component num="10"/>
     <p>26.递归方式渲染菜单</p>
-    <menu-component v-bind="item" v-for="(item, index) in links" :key="index"/>
+    <menu-component :children="$options.links" />
     <p>27.内联模板</p>
     <div>内联模板替换了组件原有的模板,可以直接使用组件属性和方法而不是作为父组件的模板编译,使得模板编写更灵活</div>
     <customer-input inline-template>
       <div>{{num}}</div>
     </customer-input>
     <p>28.X-template(貌似支持html中写法？？？？)</p>
-    <x-template/>
     <p>29.css过渡</p>
     <div>经过transition包裹的dom元素显示切换的时候他的class名称也会切换</div>
     <button @click="showDiv=!showDiv">toogle</button>
     <transition name="fade">
       <p v-if="showDiv">hello</p>
     </transition>
+    <p>28.自定义指令</p>
+    <div>用于对普通的dom进行底层操作</div>
+    <input v-focus="12345" @click="autoClick"/>
+    <p>29.render函数</p>
+    <customer-head><h1>default slot</h1></customer-head>
+    <p>30.filter(过滤器)</p>
+    <div>常用于文本格式化,用在两个地方：双花括号插值和 v-bind 表达式</div>
+    <input v-model="filterName"/>
+    <span>{{filterName | capitallize}}</span>
     <router-view/>
   </div>
 </template>
@@ -245,6 +253,22 @@
 import Vue from 'vue' // 使用require的方式Vue.set会报错
 import _ from 'lodash'
 var axios = require('axios')  // 用于发请求
+
+// 定义一个全局指令
+Vue.directive('focus', {
+  inserted (el, binding) {
+    console.log('ppppppppppppppppp', el, binding)
+    el.focus()
+    el.click()
+  }
+})
+
+// 定义一个全局filter(过滤器)
+Vue.filter('capitallize', function (value) {
+  if (!value) return ''
+  value = value.toString()
+  return _.capitalize(value)
+})
 
 // button-counter组件
 const BtnCounter = {
@@ -265,7 +289,7 @@ const BtnCounter = {
   }
 }
 
-// customer-imput 组件
+// customer-input 组件
 
 const CustomerInput = {
   template: '<input ref="input" :value="value" @input="updateValue($event.target.value)" />',
@@ -296,7 +320,10 @@ const MultilpleSlot = {
       '<slot name="header"></slot>\n' +
       '<main><slot></slot></main>\n' +
       '<slot name="footer"></slot>\n' +
-    '</div>'
+    '</div>',
+  created () {
+    console.log('slot..............', this.$slots)
+  }
 }
 
 // scope-slot
@@ -601,14 +628,14 @@ const links = [
 
 const MenuComponent = {
   name: 'menu-component',
-  props: ['label', 'children', 'link'],
+  props: ['children'],
   template: '\n' +
     '<div>\n' +
-      '<div>\n' +
-        '<a v-if="link" :href="link">{{label}}</a>\n' +
-        '<span v-else>{{label}}</span>\n' +
+      '<div v-for="(item, index) of children">\n' +
+        '<a v-if="item.link" :href="item.link">{{item.label}}</a>\n' +
+        '<span v-else>{{item.label}}</span>\n' +
+        '<menu-component :children="item.children"/>\n' +
       '</div>\n' +
-      '<div v-if="children.length>1"><menu-component v-for="(item, index) of children" v-bind="item"/></div>\n' +
     '</div>'
 }
 
@@ -617,8 +644,23 @@ const XTemplate = {
   template: '#hello-world-template'
 }
 
+// render函数
+
+const CustomerHead = {
+  render (createElement) {  // createElement返回的是节点的描述信息(虚拟节点)
+    return createElement('div', [ // 创建子元素的话第二个参数要为数组
+      createElement('div', [
+        createElement('h1', 'head'), // 第二个参数是字符串
+        createElement('div', this.$slots.default), // 第二个参数是子节点
+        createElement('div', 'footer')
+      ])
+    ])
+  }
+}
+
 export default {
   name: 'app',  // 与模板中的id为app的div没有对应关系
+  links,
   props: {
     'appProps': {
       type: String
@@ -663,8 +705,8 @@ export default {
       counter: 0,
       inputValue: '',
       currentView: 'red-block',
-      links,
-      showDiv: true
+      showDiv: true,
+      filterName: ''
     }
   },
   computed: {
@@ -795,6 +837,9 @@ export default {
       } else {
         this.currentView = 'red-block'
       }
+    },
+    autoClick () {
+      console.log('................在自定义指令组件内触发组件的click事件')
     }
   },
   components: {
@@ -812,7 +857,8 @@ export default {
     'async-component': () => import('@/components/AsyncComponent'), // webpack2 + es2015只有在页面渲染组件的时候才去加载对应的js文件，network将他打包为了1.js
     'recursive-component': RecursiveComponent,
     'menu-component': MenuComponent,
-    'x-template': XTemplate
+    'x-template': XTemplate,
+    'customer-head': CustomerHead
   }
 }
 </script>
