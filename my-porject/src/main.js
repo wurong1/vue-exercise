@@ -3,8 +3,26 @@
 import Vue from 'vue'
 import App from './App'
 import router from './router'
+import ElementUI from 'element-ui'
+import 'element-ui/lib/theme-chalk/index.css'
 
 Vue.config.productionTip = false
+
+Vue.use(ElementUI, {size: 'small'}) // 使用ElementUI插件
+
+// 在全局导航守卫（路由切换时的钩子函数）中可以判断用户的登录态
+router.beforeEach((to, from, next) => {
+  console.log('mmmmmmmmmmmmmmmm', to, from)
+  // if (!auth.loggedIn()) {  // 伪代码
+  //   next({
+  //     path: '/login',
+  //     query: { redirect: to.fullPath }
+  //   })
+  // } else {
+  //   next()
+  // }
+  next()
+})
 
 // 全局注册：组件注册在初始化根实例之前
 // 也可以单独写一个vue文件,template写在<template></template>中，其他属性写在<script></script>中
@@ -32,7 +50,7 @@ const data = {name: 'wurong', jiguan: 'sichuan', $test: 'hehe'}
 const vm = new Vue({
   el: '#app', // 替换index.html中id为app的节点
   router,
-  template: '<div><App :app-props="name" /><button @click="changName">change name</button></div>',
+  template: '<App :app-props="name" />',
   components: { App },
   data: function () { // 使用data: data也可以，但是在component内声明data必须使用函数的形式
     return data
@@ -84,7 +102,7 @@ console.log('vm.$el:', vm.$el) // 实例挂载到dom之后才可以访问
 setTimeout(() => {
   data.name = 'wurong++'
   data.xx = 'xxx'
-  console.log('创建实例后添加xx属性vm.xx', vm.xx, 'data & vm.$data', data)
+  console.log('创建实例后添加xx属性vm.xx', vm.xx, 'data', data, 'vm.$data', vm.$data)
   console.log('after 1 second name is:', vm.name)
 }, 2000)
 

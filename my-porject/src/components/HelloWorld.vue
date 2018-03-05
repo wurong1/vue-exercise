@@ -23,6 +23,9 @@ export default {
   },
   components: {
     'local-component': MyComponent // 局部注册之后才能在模板中使用
+  },
+  created: function () {
+    console.log(this.$route)
   }
 }
 </script>
